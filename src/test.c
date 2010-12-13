@@ -2,12 +2,12 @@
 #include <sndfile.h>
 
 #define BUFFER_LEN 1024
-#define MAX_CHANNLES 6
+#define MAX_CHANNELS 6
 
 static void process_data(double *data, int count, int channels);
 
 int main(void) {
-    static double data[BUFFER_LEN]
+    static double data[BUFFER_LEN];
     SNDFILE *infile;
     SNDFILE *outfile;
     SF_INFO sfinfo;
@@ -30,19 +30,19 @@ int main(void) {
         return 1;
     }
 
-    while ((readcount = sf_read_double(infilem datam BUFFER_LEN))) {
+    while ((readcount = sf_read_double(infile, data, BUFFER_LEN))) {
         process_data(data, readcount, sfinfo.channels);
         sf_write_double(outfile, data, readcount);
     }
 }
 
-static void process_data(double *data, int count, int channles) {\
+static void process_data(double *data, int count, int channels) {\
     double channel_gain[MAX_CHANNELS] = {0.5, 0.8, 0.1, 0.4, 0.4, 0.9};
     int k;
     int chan;
 
     for (chan = 0; chan < channels; chan++) {
-        for (k = chan; k < count; k += channles) {
+        for (k = chan; k < count; k += channels) {
             data[k] *= channel_gain[chan];
         }
     }
