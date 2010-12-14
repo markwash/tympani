@@ -3,8 +3,6 @@
 #ifndef SRC_SLIDINGWINDOW_H_
 #define SRC_SLIDINGWINDOW_H_
 
-#include <list>
-
 namespace tympani {
 
 class SlidingWindow {

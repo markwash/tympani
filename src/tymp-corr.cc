@@ -1,8 +1,11 @@
 // Copyright 2010 <Mark Washenberger>
 
-//#include "SlidingWindow.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <sndfile.hh>
+
+#include "SlidingWindow.h"
 
 struct Args {
   const char *filepath;
@@ -20,11 +23,26 @@ struct Args parse_args_or_die(int argc, char **argv) {
   return args;
 }
 
+#define BUFSIZE 4096
+
 int main(int argc, char **argv) {
 
   struct Args args = parse_args_or_die(argc, argv);
-
-  printf("filepath %s, width %d\n", args.filepath, args.width);
+  SndfileHandle file(args.filepath);
+  tympani::SlidingWindow window(args.width);
+  int frames;
+  int buf[BUFSIZE];
+  int *corr = new int[args.width];
+  while (1) {
+    frames = file.readf(buf, BUFSIZE/file.channels());
+    if (frames == 0)
+      break;
+    for (int i = 0; i < frames; i++) {
+      window.add(buf[i * file.channels()], buf[i * file.channels() + 1]);
+      window.correlations(corr);
+    }
+  }
+  delete corr;
 
   return 0;
 
