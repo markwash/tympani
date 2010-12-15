@@ -28,7 +28,7 @@ void AveragingSlidingWindow::add(int left, int right) {
 }
 
 void AveragingSlidingWindow::average() {
-  int32_t tmp;
+  int64_t tmp;
   for (int i = 0; i < width(); i++) {
     tmp = avg_corr_[i];
     tmp *= memory_ - 1;
