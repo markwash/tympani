@@ -40,7 +40,7 @@ struct LoopContext initializeContext(struct Args args) {
   context.in_file = new SndfileHandle(args.input_filepath);
   context.sliding_window = new tympani::SlidingWindow(args.width);
   context.avg_window = new tympani::AveragingSlidingWindow(
-        context.sliding_window, 11025);
+        context.sliding_window, 5 * 44100);
   context.screen_generator =
         new tympani::CorrelationsScreenGenerator(args.width);
   context.screen = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
