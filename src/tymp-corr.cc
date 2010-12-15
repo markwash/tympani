@@ -6,44 +6,44 @@
 #include <sndfile.hh>
 
 #include "AveragingSlidingWindow.h"
-#include "CorrelationsFile.h"
+#include "CorrelationsScreenGenerator.h"
 #include "SlidingWindow.h"
 
 const int kBufSize = 4096;
 
 struct Args {
   const char *input_filepath;
-  const char *output_filepath;
   int width;
 };
 
 struct Args parse_args_or_die(int argc, char **argv) {
-  if (argc != 4) {
-    fprintf(stderr, "Usage: %s <input file> <output file> <width>\n", argv[0]);
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <input file> <width>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
   struct Args args;
   args.input_filepath = argv[1];
-  args.output_filepath = argv[2];
-  args.width = atoi(argv[3]);
+  args.width = atoi(argv[2]);
   return args;
 }
 
 struct LoopContext {
   SndfileHandle *in_file;
-  tympani::CorrelationsFile<int> *out_file;
   tympani::SlidingWindow *sliding_window;
   tympani::AveragingSlidingWindow *avg_window;
+  tympani::CorrelationsScreenGenerator *screen_generator;
+  SDL_Surface *screen;
 };
 
 struct LoopContext initializeContext(struct Args args) {
   struct LoopContext context;
   context.in_file = new SndfileHandle(args.input_filepath);
-  context.out_file = new tympani::CorrelationsFile<int>(args.width);
-  context.out_file->open(args.output_filepath);
   context.sliding_window = new tympani::SlidingWindow(args.width);
   context.avg_window = new tympani::AveragingSlidingWindow(
         context.sliding_window, 11025);
+  context.screen_generator =
+        new tympani::CorrelationsScreenGenerator(args.width);
+  context.screen = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
   return context;
 }
 
@@ -66,7 +66,7 @@ void runLoop(struct LoopContext context) {
       context.avg_window->add(left, right);
       if (count % samples_per_write == 0) {
         context.avg_window->correlations(corr);
-        context.out_file->write(corr);
+        context.screen_generator->draw(context.screen, corr);
       }
     }
   }
@@ -74,14 +74,14 @@ void runLoop(struct LoopContext context) {
 }
 
 void destroyContext(struct LoopContext context) {
-  context.out_file->close();
   delete context.in_file;
-  delete context.out_file;
   delete context.sliding_window;
   delete context.avg_window;
+  delete context.screen_generator;
 }
 
 int main(int argc, char **argv) {
+  SDL_Init(SDL_INIT_EVERYTHING);
   struct Args args = parse_args_or_die(argc, argv);
   struct LoopContext context = initializeContext(args);
   runLoop(context);
