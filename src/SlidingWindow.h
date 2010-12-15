@@ -12,6 +12,7 @@ class SlidingWindow {
 
   void add(int left, int right);
   void correlations(int *corr);
+  int width() { return width_; }
 
  private:
   int width_;
