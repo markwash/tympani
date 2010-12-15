@@ -5,8 +5,11 @@
 
 #include <sndfile.hh>
 
+#include "AveragingSlidingWindow.h"
 #include "CorrelationsFile.h"
 #include "SlidingWindow.h"
+
+const int kBufSize = 4096;
 
 struct Args {
   const char *input_filepath;
@@ -26,34 +29,63 @@ struct Args parse_args_or_die(int argc, char **argv) {
   return args;
 }
 
-const int kBufSize = 4096;
+struct LoopContext {
+  SndfileHandle *in_file;
+  tympani::CorrelationsFile<int> *out_file;
+  tympani::SlidingWindow *sliding_window;
+  tympani::AveragingSlidingWindow *avg_window;
+};
 
-int main(int argc, char **argv) {
+struct LoopContext initializeContext(struct Args args) {
+  struct LoopContext context;
+  context.in_file = new SndfileHandle(args.input_filepath);
+  context.out_file = new tympani::CorrelationsFile<int>(args.width);
+  context.out_file->open(args.output_filepath);
+  context.sliding_window = new tympani::SlidingWindow(args.width);
+  context.avg_window = new tympani::AveragingSlidingWindow(
+        context.sliding_window, 11025);
+  return context;
+}
 
-  struct Args args = parse_args_or_die(argc, argv);
-  SndfileHandle in_file(args.input_filepath);
-  tympani::CorrelationsFile<int> out_file(args.width);
-  out_file.open(args.output_filepath);
-  tympani::SlidingWindow window(args.width);
-  int frames;
+void runLoop(struct LoopContext context) {
+  int frames, left, right;
   int buf[kBufSize];
-  int *corr = new int[args.width];
-  int left, right;
+  int *corr = new int[context.sliding_window->width()];
+  int frames_to_read = kBufSize/context.in_file->channels();
+  int samples_per_write = context.in_file->samplerate() / 30;
+
+  int count = 0;
   while (1) {
-    frames = in_file.readf(buf, kBufSize/in_file.channels());
+    frames = context.in_file->readf(buf, frames_to_read);
     if (frames == 0)
       break;
     for (int i = 0; i < frames; i++) {
-      left = buf[i * in_file.channels()];
-      right = buf[i * in_file.channels() + 1];
-      window.add(left, right);
-      window.correlations(corr);
-      out_file.write(corr);
+      count++;
+      left = buf[i * context.in_file->channels()];
+      right = buf[i * context.in_file->channels() + 1];
+      context.avg_window->add(left, right);
+      if (count % samples_per_write == 0) {
+        context.avg_window->correlations(corr);
+        context.out_file->write(corr);
+      }
     }
   }
-  out_file.close();
   delete[] corr;
-
-  return 0;
-
 }
+
+void destroyContext(struct LoopContext context) {
+  context.out_file->close();
+  delete context.in_file;
+  delete context.out_file;
+  delete context.sliding_window;
+  delete context.avg_window;
+}
+
+int main(int argc, char **argv) {
+  struct Args args = parse_args_or_die(argc, argv);
+  struct LoopContext context = initializeContext(args);
+  runLoop(context);
+  destroyContext(context);
+  return 0;
+}
+
