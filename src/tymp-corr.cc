@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <sndfile.hh>
 
@@ -40,10 +41,10 @@ struct LoopContext initializeContext(struct Args args) {
   context.in_file = new SndfileHandle(args.input_filepath);
   context.sliding_window = new tympani::SlidingWindow(args.width);
   context.avg_window = new tympani::AveragingSlidingWindow(
-        context.sliding_window, 5 * 44100);
+        context.sliding_window, 44100/4);
   context.screen_generator =
         new tympani::CorrelationsScreenGenerator(args.width);
-  context.screen = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
+  context.screen = SDL_SetVideoMode(1024, 1024, 32, SDL_HWSURFACE);
   return context;
 }
 
@@ -67,6 +68,7 @@ void runLoop(struct LoopContext context) {
       if (count % samples_per_write == 0) {
         context.avg_window->correlations(corr);
         context.screen_generator->draw(context.screen, corr);
+        usleep(5000);
       }
     }
   }
