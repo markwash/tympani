@@ -55,7 +55,7 @@ void initializeInputStream(portaudio::BlockingStream **input_stream) {
   portaudio::DirectionSpecificStreamParameters input_params;
   input_params.setDevice(input_device);
   input_params.setNumChannels(2);
-  input_params.setSampleFormat(portaudio::INT16);
+  input_params.setSampleFormat(portaudio::INT32);
   input_params.setSuggestedLatency(input_device.defaultLowInputLatency());
   input_params.setHostApiSpecificStreamInfo(NULL);
   portaudio::StreamParameters params;
