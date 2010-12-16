@@ -36,7 +36,7 @@ void SlidingWindow::correlations(int *corr) {
   int left, right;
   for (int i = 0; i < width_; i++) {
     left_idx = (count_ + i) % width_;
-    right_idx = (count_ + width_ - i) % width_;
+    right_idx = (count_ + width_ - i - 1) % width_;
     left = left_[left_idx] / 0x100;
     right = right_[right_idx] / 0x100;
     corr[i] = left * right;
