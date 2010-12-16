@@ -90,13 +90,26 @@ int readFrames(portaudio::BlockingStream *in, int *buf,
   return frames;
 }
 
+int timeToQuit() {
+  SDL_Event event;
+  int event_found;
+  while (1) {
+    event_found = SDL_PollEvent(&event);
+    if (event_found == 0)
+      break;
+    if (event.type == SDL_QUIT)
+      return 1;
+  }
+  return 0;
+}
+
 void runLoop(struct LoopContext context) {
   int frames, left, right;
   int buf[kMaxBufSize];
   int *corr = new int[context.sliding_window->width()];
 
   int count = 0;
-  while (1) {
+  while (!timeToQuit()) {
 
     frames = readFrames(context.input_stream, buf, kMaxBufSize, 2);
 
@@ -109,6 +122,7 @@ void runLoop(struct LoopContext context) {
 
     context.avg_window->correlations(corr);
     context.screen_generator->draw(context.screen, corr);
+
   }
   delete[] corr;
 }
