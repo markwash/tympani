@@ -55,7 +55,7 @@ void initializeInputStream(portaudio::BlockingStream **input_stream) {
       portaudio::DirectionSpecificStreamParameters::null());
   params.setSampleRate(input_device.defaultSampleRate());
   params.setFramesPerBuffer(paFramesPerBufferUnspecified);
-  params.unsetFlag(paNeverDropInput);
+  params.clearFlags();
   assert(params.isSupported());
   *input_stream = new portaudio::BlockingStream(params);
   (*input_stream)->start();
