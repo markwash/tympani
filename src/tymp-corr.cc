@@ -12,6 +12,8 @@
 #include <portaudiocpp/StreamParameters.hxx>
 #include <portaudiocpp/System.hxx>
 
+#include "sndfile.hh"
+
 #include "AveragingSlidingWindow.h"
 #include "CorrelationsScreenGenerator.h"
 #include "SlidingWindow.h"
@@ -21,20 +23,26 @@ const int kMaxBufSize = 65535;
 
 struct Args {
   int width;
+  const char *output_path;
 };
 
 struct Args parse_args_or_die(int argc, char **argv) {
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <width>\n", argv[0]);
+  if (argc != 2 && argc != 3) {
+    fprintf(stderr, "Usage: %s <width> [<output_path>]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
   struct Args args;
   args.width = atoi(argv[1]);
+  if (argc == 2)
+    args.output_path = NULL;
+  else
+    args.output_path = argv[2];
   return args;
 }
 
 struct LoopContext {
   portaudio::BlockingStream *input_stream;
+  SndfileHandle *output_file;
   tympani::SlidingWindow *sliding_window;
   tympani::AveragingSlidingWindow *avg_window;
   tympani::CorrelationsScreenGenerator *screen_generator;
@@ -49,6 +57,7 @@ void initializeInputStream(portaudio::BlockingStream **input_stream) {
   input_params.setNumChannels(2);
   input_params.setSampleFormat(portaudio::INT16);
   input_params.setSuggestedLatency(input_device.defaultLowInputLatency());
+  input_params.setHostApiSpecificStreamInfo(NULL);
   portaudio::StreamParameters params;
   params.setInputParameters(input_params);
   params.setOutputParameters(
@@ -64,6 +73,12 @@ void initializeInputStream(portaudio::BlockingStream **input_stream) {
 struct LoopContext initializeContext(struct Args args) {
   struct LoopContext context;
   initializeInputStream(&context.input_stream);
+  if (args.output_path == NULL)
+    context.output_file = NULL;
+  else
+    context.output_file = new SndfileHandle(
+        args.output_path, SFM_WRITE, 0x10002, 2,
+        context.input_stream->sampleRate());
   context.sliding_window = new tympani::SlidingWindow(args.width);
   context.avg_window = new tympani::AveragingSlidingWindow(
         context.sliding_window, context.input_stream->sampleRate() / 2);
@@ -120,6 +135,9 @@ void runLoop(struct LoopContext context) {
       context.avg_window->add(left, right);
     }
 
+    if (context.output_file != NULL)
+      context.output_file->writef(buf, frames);
+
     context.avg_window->correlations(corr);
     context.screen_generator->draw(context.screen, corr);
 
@@ -129,15 +147,17 @@ void runLoop(struct LoopContext context) {
 
 void destroyContext(struct LoopContext context) {
   delete context.input_stream;
+  if (context.output_file != NULL)
+    delete context.output_file;
   delete context.sliding_window;
   delete context.avg_window;
   delete context.screen_generator;
 }
 
 int main(int argc, char **argv) {
+  struct Args args = parse_args_or_die(argc, argv);
   portaudio::AutoSystem auto_sys;
   SDL_Init(SDL_INIT_EVERYTHING);
-  struct Args args = parse_args_or_die(argc, argv);
   struct LoopContext context = initializeContext(args);
   runLoop(context);
   destroyContext(context);
