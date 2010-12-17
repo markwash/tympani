@@ -81,7 +81,7 @@ struct LoopContext initializeContext(struct Args args) {
         context.input_stream->sampleRate());
   context.sliding_window = new tympani::SlidingWindow(args.width);
   context.avg_window = new tympani::AveragingSlidingWindow(
-        context.sliding_window, context.input_stream->sampleRate() / 2);
+        context.sliding_window, context.input_stream->sampleRate() / 4);
   context.screen_generator =
         new tympani::CorrelationsScreenGenerator(args.width);
   context.screen = SDL_SetVideoMode(1024, 1024, 32, SDL_HWSURFACE);
