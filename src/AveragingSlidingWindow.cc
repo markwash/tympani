@@ -39,8 +39,12 @@ void AveragingSlidingWindow::average() {
 }
 
 void AveragingSlidingWindow::correlations(int *corr) {
+  int frame_avg = 0;
   for (int i = 0; i < width(); i++) {
-    corr[i] = avg_corr_[i];
+    frame_avg += avg_corr_[i]/width();
+  }
+  for (int i = 0; i < width(); i++) {
+    corr[i] = avg_corr_[i] - frame_avg;
   }
 }
 
