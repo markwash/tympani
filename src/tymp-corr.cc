@@ -92,17 +92,33 @@ int readFrames(portaudio::BlockingStream *in, int *buf,
                int max_size, int frame_size) {
   int max_frames_to_read = max_size / frame_size;
   int min_frames_to_read = in->sampleRate() / 24;
-  int frames, frames_available;
+  int total_frames, frames, frames_available;
+  double sleep_seconds;
 
-  frames_available = in->availableReadSize();
-  if (frames_available < min_frames_to_read)
-    frames = min_frames_to_read;
-  else if (frames_available > max_frames_to_read)
-    frames = max_frames_to_read;
-  else
-    frames = frames_available;
-  in->read(buf, frames);
-  return frames;
+  total_frames = 0;
+  while (total_frames < min_frames_to_read) {
+
+    if (total_frames > 0) {
+      sleep_seconds = (min_frames_to_read - total_frames) / in->sampleRate();
+      sleep_seconds /= 2;
+      usleep(1000000 * sleep_seconds);
+    }
+
+    frames_available = in->availableReadSize();
+    if (frames_available == 0) {
+      in->stop();
+      in->start();
+      return total_frames;
+    } else if (frames_available + total_frames > max_frames_to_read) {
+      frames = max_frames_to_read - total_frames;
+    } else {
+      frames = frames_available;
+    }
+
+    in->read(buf, frames);
+    total_frames += frames;
+  }
+  return total_frames;
 }
 
 int timeToQuit() {
