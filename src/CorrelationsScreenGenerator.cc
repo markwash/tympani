@@ -12,11 +12,13 @@ CorrelationsScreenGenerator::CorrelationsScreenGenerator(int samples)
 
 void CorrelationsScreenGenerator::draw(SDL_Surface *screen, 
                                        const int *corr) {
+  lock_if_necessary(screen);
   draw_background(screen);
   update_max(corr);
   for (int i = 0; i < samples_; i++) {
     draw_sample(screen, i, corr[i]);
   }
+  unlock_if_necessary(screen);
   SDL_UpdateRect(screen, 0, 0, 0, 0);
 }
 
@@ -31,6 +33,16 @@ void CorrelationsScreenGenerator::update_max(const int *corr) {
 
 void CorrelationsScreenGenerator::draw_background(SDL_Surface *screen) {
   memset(screen->pixels, 0, screen->h * screen->pitch);
+}
+
+void CorrelationsScreenGenerator::lock_if_necessary(SDL_Surface *screen) {
+  if (SDL_MUSTLOCK(screen))
+    SDL_LockSurface(screen);
+}
+
+void CorrelationsScreenGenerator::unlock_if_necessary(SDL_Surface *screen) {
+  if (SDL_MUSTLOCK(screen))
+    SDL_UnlockSurface(screen);
 }
 
 void CorrelationsScreenGenerator::draw_sample(
