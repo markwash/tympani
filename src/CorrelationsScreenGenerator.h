@@ -18,6 +18,8 @@ class CorrelationsScreenGenerator {
   void update_max(const int *corr);
   void draw_background(SDL_Surface *screen);
   void draw_sample(SDL_Surface *screen, int sample, int corr);
+  void draw_rect(SDL_Surface *screen, uint32_t color,
+                 int x, int y, int w, int h);
   int samples_;
   int max_;
 

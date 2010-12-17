@@ -47,20 +47,37 @@ void CorrelationsScreenGenerator::unlock_if_necessary(SDL_Surface *screen) {
 
 void CorrelationsScreenGenerator::draw_sample(
       SDL_Surface *screen, int sample, int corr) {
-  int x, y, line_width;
+  int x, y, line_width, margin;
   int red, blue;
   uint32_t color;
   uint32_t *pixel;
   line_width = screen->w / samples_;
-  x = sample * line_width;
+  margin = (screen->w - samples_ * line_width) / 2;
+  x = sample * line_width + margin;
   y = screen->h / 2 * (1.0 - 1.0 * corr / (max_ + 1));
   red = (1.0 * (max_ + corr)) / (2.0 * max_) * 255;
   blue = (1.0 * (max_ - corr)) / (2.0 * max_) * 255;
   color = SDL_MapRGB(screen->format, red, 0, blue);
-  for (int i = 0; i < line_width; i++) {
-    pixel = (uint32_t *)screen->pixels + y * screen->pitch / 4 + x + i;
-    //fprintf(stderr, "(%d) %d, %d -> %d, %d\n", max_, sample, corr, x + i, y);
-    *pixel = color;
+
+  if (line_width > 1)
+    line_width--;
+
+  if (y < screen->h / 2)
+    draw_rect(screen, color, x, y, line_width, screen->h/2 - y);
+  else if (y > screen->h / 2)
+    draw_rect(screen, color, x, screen->h/2, line_width, y - screen->h/2);
+  else
+    draw_rect(screen, color, x, y, line_width, 1);
+}
+
+void CorrelationsScreenGenerator::draw_rect(
+    SDL_Surface *screen, uint32_t color, int x, int y, int w, int h) {
+  uint32_t *pixel;
+  for (int i = x; i < x + w; i++) {
+    for (int j = y; j < y + h; j++) {
+      pixel = (uint32_t *)screen->pixels + j * screen->pitch / 4 + i;
+      *pixel = color;
+    }
   }
 }
 
