@@ -23,12 +23,17 @@ void CorrelationsScreenGenerator::draw(SDL_Surface *screen,
 }
 
 void CorrelationsScreenGenerator::update_max(const int *corr) {
+  int frame_max = 0;
   for (int i = 0; i < samples_; i++) {
-    if (corr[i] > max_)
-      max_ = corr[i];
-    else if (-corr[i] > max_)
-      max_ = -corr[i];
+    if (corr[i] > frame_max)
+      frame_max = corr[i];
+    else if (-corr[i] > frame_max)
+      frame_max = -corr[i];
   }
+  if (frame_max > max_)
+    max_ = frame_max;
+  else
+    max_ -= 0.9 * (max_ - frame_max);
 }
 
 void CorrelationsScreenGenerator::draw_background(SDL_Surface *screen) {
