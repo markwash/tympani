@@ -88,7 +88,7 @@ struct LoopContext initializeContext(struct Args args) {
   return context;
 }
 
-int readFrames(portaudio::BlockingStream *in, int *buf, 
+int readFrames(portaudio::BlockingStream *in, int *buf,
                int max_size, int frame_size) {
   int max_frames_to_read = max_size / frame_size;
   int min_frames_to_read = in->sampleRate() / 24;
