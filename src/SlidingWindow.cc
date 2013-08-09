@@ -10,7 +10,7 @@ namespace tympani {
 SlidingWindow::SlidingWindow(int width)
     : width_(width),
       count_(0),
-      left_(NULL), 
+      left_(NULL),
       right_(NULL) {
   left_ = new int[width_];
   right_ = new int[width_];

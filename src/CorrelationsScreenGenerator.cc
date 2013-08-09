@@ -8,9 +8,9 @@
 namespace tympani {
 
 CorrelationsScreenGenerator::CorrelationsScreenGenerator(int samples)
-    : samples_(samples), max_(1) {} 
+    : samples_(samples), max_(1) {}
 
-void CorrelationsScreenGenerator::draw(SDL_Surface *screen, 
+void CorrelationsScreenGenerator::draw(SDL_Surface *screen,
                                        const int *corr) {
   lock_if_necessary(screen);
   draw_background(screen);
